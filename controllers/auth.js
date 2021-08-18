@@ -1,7 +1,9 @@
 const User = require("../models/user");
 const { validationResult, check } = require("express-validator");
 const jwt = require("jsonwebtoken");
-const expressJwt = require("express-jwt");
+const Redis = require("redis");
+
+const redisClient = Redis.createClient();
 
 exports.signup = (req, res) => {
 	//console.log("REQ BODY", req.body);
@@ -53,14 +55,37 @@ exports.signin = (req, res) => {
 				error: "Email and Password do not match",
 			});
 		}
+
 		//create token
-		const token = jwt.sign({ _id: user._id }, process.env.SECRET);
+		const token = jwt.sign(
+			{ _id: user._id },
+			process.env.SECRET,
+			(err, redtoken) => {
+				console.log(typeof user._id);
+				console.log(redtoken);
+				const redisId = user._id.toString();
+				const redisToken = redtoken;
+				console.log(redisId, redisToken);
+
+				redisClient.SET(redisId, redisToken, (err, reply) => {
+					if (err) {
+						console.log("Message on line 72" + err);
+					} else {
+						console.log(reply + "Succesfull");
+					}
+				});
+				redisClient.get(_id, (err, data) => {
+					console.log(data);
+				});
+			}
+		);
 		//put token in cookie
 		res.cookie("token", token, { expire: new Date() + 9999 });
 
 		//send response to front end
-		const { _id, name, email, role } = user;
-		return res.json({ token, user: { _id, name, email, role } });
+		//const { _id, name, email } = user;
+		const { _id, name, email } = user;
+		return res.json({ token, user: { _id, name, email } });
 	});
 };
 
