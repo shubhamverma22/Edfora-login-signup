@@ -83,13 +83,8 @@ exports.signin = async (req, res) => {
 		//put token in cookie
 		res.cookie("token", token, { expire: new Date() + 9999 });
 
+		//middleware Code
 		//decode Token
-		const decoded = jwt_decode(token);
-		const decodId = decoded._id.toString();
-		console.log(decodId);
-		redisClient.GET(decodId, (err, data) => {
-			console.log("Key is Valid", data);
-		});
 
 		//send response to front end
 		const { _id, name, email } = user;
@@ -98,22 +93,22 @@ exports.signin = async (req, res) => {
 };
 
 //middleware
-exports.matchedToken = async (req, res, next) => {
-	try {
-		const token = req.headers["cookie"];
-		console.log("middleware token" + token);
-		redisClient.GET(id, (err, data) => {
-			if (err) {
-				console.log("Error in Authorization" + err);
-			} else if (data === token) {
-				next();
-			} else {
-				return res.status(401).json("error");
-			}
-		});
-	} catch (error) {
-		return res.status(401).send(e);
-	}
+exports.matchedToken = (req, res, next) => {
+	const oldToken = req.header("authorization");
+	let normalizedToken = oldToken.slice(7);
+	console.log(normalizedToken);
+	const decoded = jwt_decode(oldToken);
+	const decodId = decoded._id.toString();
+	console.log(decodId);
+	redisClient.GET(decodId, (err, redisToken) => {
+		console.log("Signature is Valid", redisToken);
+		if (redisToken === normalizedToken) {
+			console.log("Tokens are same");
+			console.log(decodId);
+			return decodId;
+			next();
+		}
+	});
 };
 
 exports.signout = (req, res) => {
