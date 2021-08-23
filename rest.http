@@ -1,4 +1,15 @@
-GET  http://localhost:5050
+GET http://localhost:5050
 
-###
-GET  http://localhost:5050/abc
+###  Signup/Register Route
+POST http://localhost:5050/api/signup
+
+### SignIn/Login Route
+POST http://localhost:5050/api/signin
+
+### Signout/logout
+GET http://localhost:5050/api/signout
+
+
+
+### UserInfo Route
+GET http://localhost:5050/api/profile

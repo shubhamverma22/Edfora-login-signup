@@ -3,6 +3,7 @@ const { validationResult, check } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const Redis = require("redis");
 const jwt_decode = require("jwt-decode");
+const expressJwt = require("express-jwt");
 
 const redisClient = Redis.createClient();
 
@@ -101,14 +102,46 @@ exports.matchedToken = (req, res, next) => {
 	const decodId = decoded._id.toString();
 	console.log(decodId);
 	redisClient.GET(decodId, (err, redisToken) => {
+		if (err) {
+			return res.status(401).json({
+				err: "Unable to Find Id in db",
+			});
+		}
 		console.log("Signature is Valid", redisToken);
 		if (redisToken === normalizedToken) {
 			console.log("Tokens are same");
 			console.log(decodId);
-			return decodId;
+			req.userId = decodId;
 			next();
 		}
 	});
+};
+
+//protected routes
+exports.isSignedIn = expressJwt({
+	secret: process.env.SECRET,
+	userProperty: "auth", //it sends the same id which user is signed in somewher you see req.auth which actual belongs from here
+});
+
+//custom middleware
+//note: - profile is set from the frontend
+exports.isAuthenticated = (req, res, next) => {
+	const checker = req.profile && req.auth && req.profile._id == req.auth._id;
+	if (!checker) {
+		res.status(403).json({
+			error: "ACCESS DENIED",
+		});
+	}
+	next();
+};
+
+exports.isAdmin = (req, res, next) => {
+	if (req.profile.role === 0) {
+		return res.status(403).json({
+			error: "You're not Admin, Access denied",
+		});
+	}
+	next();
 };
 
 exports.signout = (req, res) => {

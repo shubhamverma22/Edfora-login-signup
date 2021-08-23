@@ -1,6 +1,6 @@
 var mongoose = require("mongoose");
 const crypto = require("crypto");
-const { v4: uuidv4 } = require('uuid');	//to generate unique id's
+const { v4: uuidv4 } = require("uuid"); //to generate unique id's
 
 const userSchema = new mongoose.Schema(
 	{
@@ -21,30 +21,32 @@ const userSchema = new mongoose.Schema(
 			required: true,
 			unique: true,
 		},
+		role: {
+			type: Number,
+			default: 0,
+		},
 		encry_password: {
 			type: String,
 			required: true,
 		},
 		salt: String,
 	},
-	{ timestamps: true }		//this gives the time when the new user is created
+	{ timestamps: true } //this gives the time when the new user is created
 );
-
 
 //virtual is used to encrypt password ongoing process. (setter is udes to set the encry password & getter is used to return the encrypted password)
 userSchema
 	.virtual("password")
 	.set(function (password) {
 		this._password = password; //it svaes the actual password in variable _password
-		this.salt = uuidv4();			//unique id is stored in salt
+		this.salt = uuidv4(); //unique id is stored in salt
 		this.encry_password = this.securePassword(password);
 	})
 	.get(function () {
 		return this._password;
 	});
 
-
-	//this is how we create a methods in mongoose
+//this is how we create a methods in mongoose
 userSchema.methods = {
 	authenticate: function (plainPassword) {
 		return this.securePassword(plainPassword) === this.encry_password;

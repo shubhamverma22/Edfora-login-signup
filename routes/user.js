@@ -4,6 +4,6 @@ const { getUser } = require("../controllers/user");
 const { matchedToken } = require("../controllers/auth");
 const router = express.Router();
 
-router.get("/user", matchedToken, getUser);
+router.get("/profile", matchedToken, getUser);
 
 module.exports = router;
